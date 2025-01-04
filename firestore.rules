@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if the document belongs to the current user
+    function isOwner() {
+      return request.auth.uid == resource.data.userId;
+    }
+    
+    // Helper function for creation requests
+    function isValidCreate() {
+      return request.auth.uid == request.resource.data.userId;
+    }
+
+    // Rules for items collection
+    match /items/{itemId} {
+      allow read: if isAuthenticated() && (isOwner() || !exists(/databases/$(database)/documents/items/$(itemId)));
+      allow create: if isAuthenticated() && isValidCreate();
+      allow update, delete: if isAuthenticated() && isOwner();
+    }
+
+    // Rules for invoices collection
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated() && (isOwner() || !exists(/databases/$(database)/documents/invoices/$(invoiceId)));
+      allow create: if isAuthenticated() && isValidCreate();
+      allow update, delete: if isAuthenticated() && isOwner();
+    }
+
+    // Rules for labels collection
+    match /labels/{labelId} {
+      allow read: if isAuthenticated() && (isOwner() || !exists(/databases/$(database)/documents/labels/$(labelId)));
+      allow create: if isAuthenticated() && isValidCreate();
+      allow update, delete: if isAuthenticated() && isOwner();
+    }
+
+    // Rules for users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+  }
+} 
